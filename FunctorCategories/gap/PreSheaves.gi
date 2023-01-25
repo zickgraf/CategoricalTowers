@@ -936,7 +936,7 @@ InstallMethodWithCache( PreSheavesOfFpEnrichedCategory,
         
         AddIsWellDefinedForMorphisms( PSh,
           function ( PSh, eta )
-            local B, D, objects, generating_morphisms, F, G;
+            local B, D, objects, generating_morphisms, defining_triple, nr_objs, nr_mors, mors, F, G;
             
             B := Source( PSh );
             D := Target( PSh );
@@ -944,25 +944,47 @@ InstallMethodWithCache( PreSheavesOfFpEnrichedCategory,
             objects := SetOfObjects( B );
             generating_morphisms := SetOfGeneratingMorphisms( B );
             
+            defining_triple := DefiningTripleOfUnderlyingQuiver( Source( PSh ) );
+            
+            nr_objs := defining_triple[1];
+            nr_mors := defining_triple[2];
+            mors := defining_triple[3];
+            
             F := Source( eta );
             G := Target( eta );
             
-            return
-              ForAll( objects, o -> IsWellDefinedForMorphisms( D, eta( o ) ) ) and
-              #          F(t(m)) --F(m)-> F(s(m))
-              #             |                |
-              #  eta_{t(m)} |                | eta_{s(m)}
-              #             v                v
-              #          G(t(m)) --G(m)-> G(s(m))
-              ForAll( generating_morphisms,
-                      function ( m )
-                         return
-                           IsEqualForObjects( D, Target( F( m ) ), Source( eta( Source( m ) ) ) ) and
-                           IsEqualForObjects( D, Target( eta( Target( m ) ) ), Source( G( m ) ) ) and
+            return ForAll( [ 1 .. nr_objs ], objB_index -> IsWellDefinedForMorphisms( D, ValuesOnAllObjects( eta )[objB_index] ) ) and
+                   ForAll( [ 1 .. nr_mors ], morB_index ->
+                           IsEqualForObjects( D, Target( ValuesOfPreSheaf( F )[2][morB_index] ), Source( ValuesOnAllObjects( eta )[1 + mors[morB_index][1]] ) ) and
+                           IsEqualForObjects( D, Target( ValuesOnAllObjects( eta )[1 + mors[morB_index][2]] ), Source( ValuesOfPreSheaf( G )[2][morB_index] ) ) and
                            IsEqualForMorphisms( D,
-                                   PreCompose( D, F( m ), eta( Source( m ) ) ),
-                                   PreCompose( D, eta( Target( m ) ), G( m ) ) );
-                     end );
+                                   PreCompose( D, ValuesOfPreSheaf( F )[2][morB_index], ValuesOnAllObjects( eta )[1 + mors[morB_index][1]] ),
+                                   PreCompose( D, ValuesOnAllObjects( eta )[1 + mors[morB_index][2]], ValuesOfPreSheaf( G )[2][morB_index] ) )
+                   );
+            
+            #local D, F, G;
+            #
+            #D := Target( PSh );
+            #
+            #F := Source( eta );
+            #G := Target( eta );
+            #
+            #return
+            #  ForAll( objects, o -> IsWellDefinedForMorphisms( D, eta( o ) ) ) and
+            #  #          F(t(m)) --F(m)-> F(s(m))
+            #  #             |                |
+            #  #  eta_{t(m)} |                | eta_{s(m)}
+            #  #             v                v
+            #  #          G(t(m)) --G(m)-> G(s(m))
+            #  ForAll( generating_morphisms,
+            #          function ( m )
+            #             return
+            #               IsEqualForObjects( D, Target( F( m ) ), Source( eta( Source( m ) ) ) ) and
+            #               IsEqualForObjects( D, Target( eta( Target( m ) ) ), Source( G( m ) ) ) and
+            #               IsEqualForMorphisms( D,
+            #                       PreCompose( D, F( m ), eta( Source( m ) ) ),
+            #                       PreCompose( D, eta( Target( m ) ), G( m ) ) );
+            #         end );
             
         end );
         
@@ -1113,21 +1135,24 @@ InstallMethodWithCache( PreSheavesOfFpEnrichedCategory,
             
             AddIsWellDefinedForObjects( PSh,
               function ( PSh, F )
-                local B, D, objects, generating_morphisms, relations, on_mors, is_equal;
+                local B, D, objects, generating_morphisms, defining_triple, nr_objs, nr_mors, mors, relations, on_mors, is_equal;
                 
                 B := Source( PSh );
                 D := Target( PSh );
                 
-                objects := SetOfObjects( B );
-                generating_morphisms := SetOfGeneratingMorphisms( B );
+                defining_triple := DefiningTripleOfUnderlyingQuiver( Source( PSh ) );
                 
-                if not ForAll( objects, o -> IsWellDefinedForObjects( D, F( o ) ) ) then
+                nr_objs := defining_triple[1];
+                nr_mors := defining_triple[2];
+                mors := defining_triple[3];
+            
+                if not ForAll( [ 1 .. nr_objs ], o -> IsWellDefinedForObjects( D, ValuesOfPreSheaf( F )[1][o] ) ) then
                     return false;
-                elif not ForAll( generating_morphisms, m -> IsWellDefinedForMorphisms( D, F( m ) ) ) then
+                elif not ForAll( [ 1 .. nr_mors ], m -> IsWellDefinedForMorphisms( D, ValuesOfPreSheaf( F )[2][m] ) ) then
                     return false;
-                elif not ForAll( generating_morphisms, m -> IsEqualForObjects( D, F( Target( m ) ), Source( F( m ) ) ) ) then
+                elif not ForAll( [ 1 .. nr_mors ], m -> IsEqualForObjects( D, ValuesOfPreSheaf( F )[1][1 + mors[m][2]], Source( ValuesOfPreSheaf( F )[2][m] ) ) ) then
                     return false;
-                elif not ForAll( generating_morphisms, m -> IsEqualForObjects( D, F( Source( m ) ), Target( F( m ) ) ) ) then
+                elif not ForAll( [ 1 .. nr_mors ], m -> IsEqualForObjects( D, ValuesOfPreSheaf( F )[1][1 + mors[m][1]], Target( ValuesOfPreSheaf( F )[2][m] ) ) ) then
                     return false;
                 fi;
                 
@@ -1154,13 +1179,55 @@ InstallMethodWithCache( PreSheavesOfFpEnrichedCategory,
                 
                 return ForAll( relations, is_equal );
                 
+                
+                
+                #local V, objects, generating_morphisms, relations, on_mors, is_equal;
+                #
+                #V := Target( PSh );
+                #
+                #objects := SetOfObjects( B );
+                #generating_morphisms := SetOfGeneratingMorphisms( B );
+                #
+                #if not ForAll( objects, o -> IsWellDefinedForObjects( V, F( o ) ) ) then
+                #    return false;
+                #elif not ForAll( generating_morphisms, m -> IsWellDefinedForMorphisms( V, F( m ) ) ) then
+                #    return false;
+                #elif not ForAll( generating_morphisms, m -> IsEqualForObjects( V, F( Target( m ) ), Source( F( m ) ) ) ) then
+                #    return false;
+                #elif not ForAll( generating_morphisms, m -> IsEqualForObjects( V, F( Source( m ) ), Target( F( m ) ) ) ) then
+                #    return false;
+                #fi;
+                #
+                #relations := RelationsAmongGeneratingMorphisms( B );
+                #
+                #on_mors := ValuesOfPreSheaf( F )[2];
+                #
+                #is_equal :=
+                #  function( pair )
+                #    
+                #    if IsEmpty( pair[1] ) and IsEmpty( pair[2] ) then
+                #        Error( "both lists in the relation are empty\n" );
+                #    elif IsEmpty( pair[2] ) then
+                #        return IsOne( PreComposeList( V, List( Reversed( pair[1] ), i -> on_mors[1 + i] ) ) );
+                #    elif IsEmpty( pair[1] ) then
+                #        return IsOne( PreComposeList( V, List( Reversed( pair[2] ), i -> on_mors[1 + i] ) ) );
+                #    fi;
+                #    
+                #    return IsCongruentForMorphisms( V,
+                #                   PreComposeList( V, List( Reversed( pair[1] ), i -> on_mors[1 + i] ) ),
+                #                   PreComposeList( V, List( Reversed( pair[2] ), i -> on_mors[1 + i] ) ) );
+                #    
+                #end;
+                #
+                #return ForAll( relations, is_equal );
+                
             end );
             
         fi;
         
         AddIsEqualForObjects( PSh,
           function ( PSh, F, G )
-            local B, D, objects, generating_morphisms;
+            local B, D, objects, generating_morphisms, defining_triple, nr_objs, nr_mors, mors;
             
             B := Source( PSh );
             D := Target( PSh );
@@ -1168,34 +1235,66 @@ InstallMethodWithCache( PreSheavesOfFpEnrichedCategory,
             objects := SetOfObjects( B );
             generating_morphisms := SetOfGeneratingMorphisms( B );
             
-            return ForAll( objects, o -> IsEqualForObjects( D, F( o ), G( o ) ) ) and
-                   ForAll( generating_morphisms, m -> IsEqualForMorphisms( D, F( m ), G( m ) ) );
+            defining_triple := DefiningTripleOfUnderlyingQuiver( Source( PSh ) );
+            
+            nr_objs := defining_triple[1];
+            nr_mors := defining_triple[2];
+            mors := defining_triple[3];
+            
+            #values_of_all_objects := LazyHList( [ 1 .. nr_objs ], o -> presheaf_on_objects( o ) );
+            #values_of_all_generating_morphisms := LazyHList( [ 1 .. nr_mors ], m -> presheaf_on_generating_morphisms(
+            #                                              presheaf_on_objects( 1 + mors[m][2] ),
+            #                                              m,
+            #                                              presheaf_on_objects( 1 + mors[m][1] ) ) );
+    
+            
+            #object_values_F := ValuesOnAllObjects( F );
+            #object_values_G := ValuesOnAllObjects( G );
+            
+            return ForAll( [ 1 .. nr_objs ], objB_index -> IsEqualForObjects( D, ValuesOfPreSheaf( F )[1][objB_index], ValuesOfPreSheaf( G )[1][objB_index] ) ) and
+                   ForAll( [ 1 .. nr_mors ], morB_index -> IsEqualForMorphisms( D, ValuesOfPreSheaf( F )[2][morB_index], ValuesOfPreSheaf( G )[2][morB_index] ) );
+            
+            
+            #return ForAll( objects, o -> IsEqualForObjects( D, F( o ), G( o ) ) ) and
+            #       ForAll( generating_morphisms, m -> IsEqualForMorphisms( D, F( m ), G( m ) ) );
             
         end );
         
         AddIsEqualForMorphisms( PSh,
           function ( PSh, eta, epsilon )
-            local B, D, objects;
+            local B, D, objects, defining_triple, nr_objs;
             
             B := Source( PSh );
             D := Target( PSh );
             
             objects := SetOfObjects( B );
             
-            return ForAll( objects, o -> IsEqualForMorphisms( D, eta( o ), epsilon( o ) ) );
+            defining_triple := DefiningTripleOfUnderlyingQuiver( Source( PSh ) );
+            
+            nr_objs := defining_triple[1];
+            
+            return ForAll( [ 1 .. nr_objs ], objB_index -> IsEqualForMorphisms( D, ValuesOnAllObjects( eta )[objB_index], ValuesOnAllObjects( epsilon )[objB_index] ) );
+            
+            #return ForAll( objects, o -> IsEqualForMorphisms( D, eta( o ), epsilon( o ) ) );
             
         end );
         
         AddIsCongruentForMorphisms( PSh,
           function ( PSh, eta, epsilon )
-            local B, D, objects;
+            local B, D, objects, defining_triple, nr_objs;
             
             B := Source( PSh );
             D := Target( PSh );
             
             objects := SetOfObjects( B );
             
-            return ForAll( objects, o -> IsCongruentForMorphisms( D, eta( o ), epsilon( o ) ) );
+            defining_triple := DefiningTripleOfUnderlyingQuiver( Source( PSh ) );
+            
+            nr_objs := defining_triple[1];
+            
+            return ForAll( [ 1 .. nr_objs ], objB_index -> IsCongruentForMorphisms( D, ValuesOnAllObjects( eta )[objB_index], ValuesOnAllObjects( epsilon )[objB_index] ) );
+            
+            #return ForAll( objects, o -> IsCongruentForMorphisms( D, eta( o ), epsilon( o ) ) );
             
         end );
           
