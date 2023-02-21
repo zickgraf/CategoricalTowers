@@ -147,7 +147,7 @@ InstallMethodForCompilerForCAP( ExternalHomDiagram,
     
     morphisms := List( [ 1 .. nr_m ], mor_pair );
     
-    objects := Concatenation( [ sources, List( morphisms, m -> Target( m[1][2] ) ) ] );
+    objects := Concatenation( [ sources, List( [ 1 .. nr_m ], i -> HomomorphismStructureOnObjects( C, Source( F_m[i] ), Target( G_m[i] ) ) ) ] );
     
     return Pair( objects, Concatenation( morphisms ) );
     
