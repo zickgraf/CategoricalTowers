@@ -1491,7 +1491,7 @@ InstallMethod( FiniteStrictCoproductCompletion,
         
         return true;
         
-    end );
+    end, 1 );
     
     ##
     AddIsWellDefinedForMorphisms( UI,
@@ -1499,7 +1499,7 @@ InstallMethod( FiniteStrictCoproductCompletion,
         
         return true;
         
-    end );
+    end, 1 );
     
     ##
     AddIsEqualForObjects( UI,
@@ -1507,7 +1507,7 @@ InstallMethod( FiniteStrictCoproductCompletion,
         
         return true;
         
-    end );
+    end, 1 );
     
     ##
     AddIsEqualForMorphisms( UI,
@@ -1515,7 +1515,7 @@ InstallMethod( FiniteStrictCoproductCompletion,
         
         return true;
         
-    end );
+    end, 1 );
     
     if not H = "self" then ## if H = "self", the Hom-structure will be derived from the closed monoidal structure
         
